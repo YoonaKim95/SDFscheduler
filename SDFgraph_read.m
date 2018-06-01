@@ -7,6 +7,7 @@ clear DOMnode
 %SDFgraph filename
 [filepath,name,ext] = fileparts(infile);
 SDFgraph.filename   = name;
+SDFgraph.filepath   = filepath;
 clear filepath name ext infile
 
 %SDFgraph constrain
@@ -21,17 +22,29 @@ map_port2rate= containers.Map;
 nActor   = length(theStruct.sdf3.applicationGraph.sdf.actor);
 nChannel = length(theStruct.sdf3.applicationGraph.sdf.channel);
 for idx  = 1:nActor
-    actor       = theStruct.sdf3.applicationGraph.sdf.actor{idx};
+    if nActor == 1
+        actor       = theStruct.sdf3.applicationGraph.sdf.actor;
+    else
+        actor       = theStruct.sdf3.applicationGraph.sdf.actor{idx};
+    end
     mActor.name = actor.Attributes.name;
     map_name2idx(mActor.name) = idx;
     nport = length(actor.port);
     for jdx = 1:nport
-       port = actor.port{jdx}.Attributes;
+       if nport == 1
+           port = actor.port.Attributes;
+       else
+           port = actor.port{jdx}.Attributes;
+       end
        name = [mActor.name '_' port.name];
        map_port2rate(name) = str2double(port.rate);
     end
     
-    actor       = theStruct.sdf3.applicationGraph.sdfProperties.actorProperties{idx};
+    if nActor == 1
+        actor       = theStruct.sdf3.applicationGraph.sdfProperties.actorProperties;
+    else
+        actor       = theStruct.sdf3.applicationGraph.sdfProperties.actorProperties{idx};
+    end
     if (mActor.name ~= actor.Attributes.actor)
         error('actor name is different!');
     end
@@ -44,7 +57,11 @@ clear actor mActor allActors port nport name
 %SDFgraph channel
 allChannels = cell(nActor,nActor);
 for idx  = 1:nChannel
-    channel = theStruct.sdf3.applicationGraph.sdf.channel{idx}.Attributes;
+    if nChannel == 1
+        channel = theStruct.sdf3.applicationGraph.sdf.channel.Attributes;
+    else
+        channel = theStruct.sdf3.applicationGraph.sdf.channel{idx}.Attributes;
+    end
     mChannel.name = channel.name;
     name = [channel.srcActor '_' channel.srcPort];
     mChannel.rate_in = map_port2rate(name);
