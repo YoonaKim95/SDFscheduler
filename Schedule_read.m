@@ -1,18 +1,19 @@
 function Schedule = Schedule_read (infile)
 addpath('ultilities/');
-DOMnode = xmlread(infile);
-theStruct = xml2struct(DOMnode);
+DOMnode     = xmlread(infile);
+theStruct   = xml2struct(DOMnode);
 
-Schedule.type = theStruct.CIC_Schedule.Attributes.type;
-taskGroup.name = theStruct.CIC_Schedule.taskGroups.taskGroup.Attributes.name;
-taskGroup.buffer = theStruct.CIC_Schedule.taskGroups.taskGroup.Attributes.buffer;
+Schedule.type       = theStruct.CIC_Schedule.Attributes.type;
+Schedule.xmlns      = theStruct.CIC_Schedule.Attributes.xmlns;
+taskGroup.name      = theStruct.CIC_Schedule.taskGroups.taskGroup.Attributes.name;
+taskGroup.buffer    = theStruct.CIC_Schedule.taskGroups.taskGroup.Attributes.buffer;
 clear infile DOMnode
 
 %read schedule groups
-groups = theStruct.CIC_Schedule.taskGroups.taskGroup.scheduleGroup;
-ngroups = length(groups);
-allgroups = [];
-for idx = 1:ngroups
+groups      = theStruct.CIC_Schedule.taskGroups.taskGroup.scheduleGroup;
+ngroups     = length(groups);
+allgroups   = [];
+for idx     = 1:ngroups
     group                   = groups{idx};
     nelement                = length(group.scheduleElement);
     allelements             = [];
@@ -35,7 +36,7 @@ for idx = 1:ngroups
     mgroup.tasks            = allelements;
     allgroups = [allgroups mgroup];
 end
-taskGroup.scheduleGroups = allgroups;
-Schedule.taskGroup = taskGroup;
+taskGroup.scheduleGroups    = allgroups;
+Schedule.taskGroup          = taskGroup;
 clear nelement allelements melement mgroup group idx jdx element groups allgroups ngroups taskGroup theStruct
 end
