@@ -6,7 +6,7 @@ theStruct   = xml2struct(DOMnode);
 Schedule.type       = theStruct.CIC_Schedule.Attributes.type;
 Schedule.xmlns      = theStruct.CIC_Schedule.Attributes.xmlns;
 taskGroup.name      = theStruct.CIC_Schedule.taskGroups.taskGroup.Attributes.name;
-taskGroup.buffer    = theStruct.CIC_Schedule.taskGroups.taskGroup.Attributes.buffer;
+taskGroup.buffer    = str2num(theStruct.CIC_Schedule.taskGroups.taskGroup.Attributes.buffer);
 clear infile DOMnode
 
 %read schedule groups

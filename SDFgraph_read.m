@@ -68,12 +68,13 @@ for idx  = 1:nChannel
     name = [channel.dstActor '_' channel.dstPort];
     mChannel.rate_out= map_port2rate(name);
     if isfield(channel, 'initialTokens')
-        mChannel.initialTokens = channel.initialTokens;
+        mChannel.initialTokens = str2num(channel.initialTokens);
     else
         mChannel.initialTokens = 0;
     end
     allChannels{map_name2idx(channel.srcActor),map_name2idx(channel.dstActor)} = mChannel;
 end
 SDFgraph.channels = allChannels;
+SDFgraph.map_name2idx = map_name2idx;
 clear name channel mChannel allChannels idx jdx
 end

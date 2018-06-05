@@ -1,9 +1,5 @@
-function Schedule_write(SDFgraph, Schedule)
-if (isempty(SDFgraph.filepath))
-    outpath = ['./' SDFgraph.filename '_schedule.xml'];
-else
-    outpath = [SDFgraph.filepath '/' SDFgraph.filename '_schedule.xml'];
-end
+function Schedule_write(SDFgraph, Schedule, filepath)
+outpath = [filepath '/' SDFgraph.filename '_' length(Schedule.taskGroup.scheduleGroups) '_schedule.xml'];
 
 docNode = com.mathworks.xml.XMLUtils.createDocument('CIC_Schedule');
 CIC_Schedule = docNode.getDocumentElement;
@@ -43,5 +39,4 @@ end
 mTaskGroups.appendChild(mTaskGroup);
 CIC_Schedule.appendChild(mTaskGroups);
 xmlwrite(outpath,docNode);
-type(outpath)
 end
