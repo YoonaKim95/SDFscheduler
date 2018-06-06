@@ -10,3 +10,4 @@ Schedule    = Schedule_read('scheduling_example1/toy2_3_schedule.xml');
 nSchedule = Algorithm_1_HLFET(SDFgraph);
 Schedule_evaluate(SDFgraph, Schedule);
 Schedule_evaluate(SDFgraph, nSchedule);
+Schedule_write(SDFgraph, Schedule, '.');

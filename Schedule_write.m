@@ -1,5 +1,5 @@
 function Schedule_write(SDFgraph, Schedule, filepath)
-outpath = [filepath '/' SDFgraph.filename '_' length(Schedule.taskGroup.scheduleGroups) '_schedule.xml'];
+outpath = fullfile(filepath, [SDFgraph.filename '_' num2str(length(Schedule.taskGroup.scheduleGroups)) '_schedule.xml']);
 
 docNode = com.mathworks.xml.XMLUtils.createDocument('CIC_Schedule');
 CIC_Schedule = docNode.getDocumentElement;
@@ -10,7 +10,7 @@ mTaskGroups = docNode.createElement('taskGroups');
 mTaskGroup = docNode.createElement('taskGroup');
 
 mTaskGroup.setAttribute('name', Schedule.taskGroup.name);
-mTaskGroup.setAttribute('buffer', Schedule.taskGroup.buffer);
+mTaskGroup.setAttribute('buffer', num2str(Schedule.taskGroup.buffer));
 
 nschel = length(Schedule.taskGroup.scheduleGroups);
 for idx = 1:nschel
@@ -19,17 +19,17 @@ for idx = 1:nschel
     mscheduleGroup.setAttribute('scheduleType', scheduleGroup.scheduleType);
     mscheduleGroup.setAttribute('poolName', scheduleGroup.poolName);
     mscheduleGroup.setAttribute('name', scheduleGroup.name);
-    mscheduleGroup.setAttribute('localId', scheduleGroup.localId);
+    mscheduleGroup.setAttribute('localId', num2str(scheduleGroup.localId));
     
     ntask = length(scheduleGroup.tasks);
     for jdx = 1:ntask
         task  = scheduleGroup.tasks(jdx);
         mScheduleElement = docNode.createElement('scheduleElement');
         mTask = docNode.createElement('task');
-        mTask.setAttribute('startTime', task.startTime);
-        mTask.setAttribute('repetition', task.repetition);
+        mTask.setAttribute('startTime', num2str(task.startTime));
+        mTask.setAttribute('repetition', num2str(task.repetition));
         mTask.setAttribute('name', task.name);
-        mTask.setAttribute('endTime', task.endTime);
+        mTask.setAttribute('endTime', num2str(task.endTime));
         mScheduleElement.appendChild(mTask);
         mscheduleGroup.appendChild(mScheduleElement);
     end
