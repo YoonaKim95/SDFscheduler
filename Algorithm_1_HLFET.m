@@ -1,33 +1,92 @@
-function nSchedule = Algorithm_1_HLFET
-clc
-clear
-%SDFgraph    = SDFgraph_read('scheduling_example1/toy1.xml');
-%Schedule    = Schedule_read('scheduling_example1/toy1_4_schedule.xml');
-%SDFgraph    = SDFgraph_read('scheduling_example1/toy2.xml');
-%Schedule    = Schedule_read('scheduling_example1/toy2_3_schedule.xml');
-SDFgraph    = SDFgraph_read('scheduling_example2/toy_cap.xml');
-%Schedule    = Schedule_read('scheduling_example2/task_default_2_schedule.xml');
-%Schedule    = Schedule_read('scheduling_example2/task_default_3_schedule.xml');
-nProcessors = 2;
+function nSchedule = Algorithm_1_HLFET(SDFgraph)
+for nProcessors = 1:1000
+    numIter = 15*nProcessors;
+    [nSchedule, ~] = Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter);
+    if(nSchedule.type ~= "unset")
+        break;
+    end
+end
+end
 
-nSchedule.type = 'PaSTA';
-nSchedule.xmlns = 'http://peace.snu.ac.kr/CICXMLSchema';
-nSchedule.taskGroup.name = 'task';
-nSchedule.taskGroup.buffer = 0;
-scheduleGroups = [];
+function [nSchedule, maxBuff]= Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter)
+    nSchedule.type = "unset";
+    maxBuff        = 10^6;
+    for iter = 1:numIter
+        Schedule   = Algorithm_1_HLFET_impl(SDFgraph, nProcessors);
+        [Schedule, constraint_OK, nProc, nBuff]   = Schedule_evaluate(SDFgraph, Schedule, 0);
+        if (constraint_OK==1 && nProc==nProcessors && nBuff < maxBuff)
+            maxBuff = nBuff;
+            nSchedule = Schedule;
+        end
+    end
+end
 
-%number of buffer
-matrix_buffers = gen_init_buffers(SDFgraph);
-init_buffers   = matrix_buffers;
+function nSchedule = Algorithm_1_HLFET_impl(SDFgraph, nProcessors)
+    nSchedule.type = 'PaSTA';
+    nSchedule.xmlns = 'http://peace.snu.ac.kr/CICXMLSchema';
+    nSchedule.taskGroup.name = 'task';
+    nSchedule.taskGroup.buffer = 0;
+    scheduleGroups = [];
 
-%occurence of each actor
-actor_occ = cal_occurrence_of_actors(SDFgraph);
+    %number of buffer
+    matrix_buffers = gen_init_buffers(SDFgraph);
 
-%begin of the algorithm
-pool = ones(nProcessors, 1);
-runable_actor = list_runable_actors(SDFgraph, matrix_buffers);
+    %occurence of each actor
+    actor_occ   = cal_occurrence_of_actors(SDFgraph);
 
-nSchedule.taskGroup.scheduleGroups = scheduleGroups;
+    %begin of the algorithm
+    pool        = zeros(nProcessors, 1); %store next available time
+    events      = table;
+    nevent.type = "start";
+    nevent.time = 0;
+    nevent.actor= 0;
+    events      = [events; struct2table(nevent)];
+
+    while(sum(actor_occ(:))>0 || size(events,1)>0)
+        events = sortrows(events,'time');
+        event   = events(1,:);
+        if(event.type == "start")
+            runable_actor = shuffle(runable_actors(SDFgraph, matrix_buffers, actor_occ));
+            avail_procs   = shuffle(available_procs(pool, event.time));
+            for idx=1:length(avail_procs)
+                if(idx <= length(runable_actor))
+                    %add to scheduleGroups, change pool available time, change
+                    %matrix_buffers, add new event to event pool, reduce actor
+                    %occurence
+                    rproc      = avail_procs(idx);
+                    ractor_idx = runable_actor(idx);
+                    mActor = SDFgraph.actors(ractor_idx);
+                    scheduleGroups = add_task_to_schedule(scheduleGroups, rproc, mActor, event.time);
+                    pool(rproc) = event.time + mActor.execTime;
+                    actor_occ(ractor_idx) = actor_occ(ractor_idx) - 1;
+                    for jdx = 1:size(SDFgraph.channels,1)
+                       if(~isempty(SDFgraph.channels{jdx, ractor_idx}))
+                           matrix_buffers(jdx, ractor_idx) = matrix_buffers(jdx, ractor_idx) - SDFgraph.channels{jdx, ractor_idx}.rate_out;
+                       end
+                    end
+                    nevent.type = "finish";
+                    nevent.time = pool(rproc);
+                    nevent.actor= ractor_idx;
+                    events      = [events; struct2table(nevent)];
+                end
+            end
+        else
+            %matrix_buffers, add new event to event pool
+            ractor_idx = event.actor;
+            for rdx = 1:size(SDFgraph.channels,2)
+                if(~isempty(SDFgraph.channels{ractor_idx, rdx}))
+                   matrix_buffers(ractor_idx, rdx) = matrix_buffers(ractor_idx, rdx) + SDFgraph.channels{ractor_idx, rdx}.rate_in;
+                end
+            end
+            nevent.type = "start";
+            nevent.time = event.time;
+            nevent.actor= 0;
+            events      = [events; struct2table(nevent)];
+        end
+        events      = events(2:end,:);
+    end
+
+    nSchedule.taskGroup.scheduleGroups = scheduleGroups;
 end
 
 function matrix_buffers = gen_init_buffers(SDFgraph)
@@ -41,7 +100,7 @@ function matrix_buffers = gen_init_buffers(SDFgraph)
     end
 end
 
-function runable_actor = list_runable_actors(SDFgraph, matrix_buffers)
+function runable_actor = runable_actors(SDFgraph, matrix_buffers, actor_occ)
     runable_actor = [];
     for ractor_idx = 1:size(SDFgraph.channels,2)
         buffer_col = matrix_buffers(:, ractor_idx);
@@ -54,7 +113,7 @@ function runable_actor = list_runable_actors(SDFgraph, matrix_buffers)
                 end
            end
         end
-        if valid
+        if (valid && (actor_occ(ractor_idx) > 0))
             runable_actor = [runable_actor; ractor_idx];
         end
     end
@@ -85,4 +144,34 @@ function actor_occ = cal_occurrence_of_actors(SDFgraph)
     end %end while
 end
 
+function procs = available_procs(pool, time)
+    procs = find(time >= pool);
+end
 
+function scheduleGroups = add_task_to_schedule(scheduleGroups, proc_id, mActor, time)
+    proc_idx = 0;
+    for idx=1:length(scheduleGroups)
+        schedule = scheduleGroups(:,idx);
+        if (schedule.localId == proc_id -1)
+            proc_idx = idx;
+            break;
+        end
+    end
+    clear idx schedule
+    
+    if(proc_idx == 0)
+        schedule.localId = proc_id -1;
+        schedule.name = 'sg0';
+        schedule.poolName = 'p1';
+        schedule.scheduleType = 'static';
+        schedule.tasks = [];
+        scheduleGroups = [scheduleGroups schedule];
+        proc_idx = length(scheduleGroups);
+    end
+    
+    task.name = mActor.name;
+    task.repetition = 1;
+    task.startTime = time;
+    task.endTime   = time + mActor.execTime;
+    scheduleGroups(proc_idx).tasks = [scheduleGroups(proc_idx).tasks task];
+end

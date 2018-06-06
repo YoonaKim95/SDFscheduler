@@ -1,4 +1,7 @@
-function nSchedule = Schedule_evaluate(SDFgraph, Schedule)
+function [nSchedule, constraint_OK, nProcessors, nBuffers] = Schedule_evaluate(SDFgraph, Schedule, verbose)
+if nargin < 3
+  verbose = 1;
+end
 %list of time events
 events = table;
 nProcessors = length(Schedule.taskGroup.scheduleGroups);
@@ -7,8 +10,8 @@ for idx = 1:nProcessors
     ntask = length(scheduleGroup.tasks);
     for jdx = 1:ntask
         task  = scheduleGroup.tasks(jdx);
-        repetition = str2num(task.repetition);
-        rtime      = str2double(task.startTime);
+        repetition = task.repetition;
+        rtime      = task.startTime;
         ractor     = task.name;
         ractoridx  = SDFgraph.map_name2idx(ractor);
         rexec      = SDFgraph.actors(ractoridx).execTime;
@@ -23,7 +26,7 @@ for idx = 1:nProcessors
             event.type  = "finish";
             events = [events; struct2table(event)];
         end
-        assert(str2double(task.endTime) == event.time, 'event time mismatched.');
+        assert(task.endTime == event.time, 'event time mismatched.');
     end
 end
 events = sortrows(events,'type');
@@ -41,8 +44,12 @@ for idx=1:nProcessors
 end
 t1 = max(ntimes);
 period_duration = t1 - t0;
+constraint_OK = 0;
 if(period_duration <= SDFgraph.timeConstraints)
-    disp('the time constraint satisfied.');
+    disp_verbose(verbose,['Period ' num2str(period_duration) '. Constraint ' num2str(SDFgraph.timeConstraints) '. Satisfied.']);
+    constraint_OK = 1;
+else
+    disp_verbose(verbose,['Period ' num2str(period_duration) '. Constraint ' num2str(SDFgraph.timeConstraints) '. Not Satisfied.']);
 end
 
 %add events of next period
@@ -99,8 +106,8 @@ diff     = matrix_buffers - init_buffers;
 assert(sum(diff(:)) == 0, 'buffer after period different from initial buffer');
 nSchedule = Schedule;
 nSchedule.taskGroup.buffer = nBuffers;
-disp(['number of processor: ' num2str(nProcessors)]);
-disp(['number of buffer: ' num2str(nBuffers)]);
+disp_verbose(verbose,['number of processor: ' num2str(nProcessors)]);
+disp_verbose(verbose,['number of buffer: ' num2str(nBuffers)]);
 clear idx jdx nevents event ractor_idx init_buffers max_buffers diff
 end
 

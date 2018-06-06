@@ -6,7 +6,7 @@ theStruct   = xml2struct(DOMnode);
 Schedule.type       = theStruct.CIC_Schedule.Attributes.type;
 Schedule.xmlns      = theStruct.CIC_Schedule.Attributes.xmlns;
 taskGroup.name      = theStruct.CIC_Schedule.taskGroups.taskGroup.Attributes.name;
-taskGroup.buffer    = str2num(theStruct.CIC_Schedule.taskGroups.taskGroup.Attributes.buffer);
+taskGroup.buffer    = str2double(theStruct.CIC_Schedule.taskGroups.taskGroup.Attributes.buffer);
 clear infile DOMnode
 
 %read schedule groups
@@ -24,12 +24,12 @@ for idx     = 1:ngroups
             element         = group.scheduleElement{jdx};
         end
         melement.name       = element.task.Attributes.name;
-        melement.repetition = element.task.Attributes.repetition;
-        melement.startTime  = element.task.Attributes.startTime;
-        melement.endTime    = element.task.Attributes.endTime;
+        melement.repetition = str2double(element.task.Attributes.repetition);
+        melement.startTime  = str2double(element.task.Attributes.startTime);
+        melement.endTime    = str2double(element.task.Attributes.endTime);
         allelements         = [allelements melement];
     end
-    mgroup.localId          = group.Attributes.localId;
+    mgroup.localId          = str2double(group.Attributes.localId);
     mgroup.name             = group.Attributes.name;
     mgroup.poolName         = group.Attributes.poolName;
     mgroup.scheduleType     = group.Attributes.scheduleType;
