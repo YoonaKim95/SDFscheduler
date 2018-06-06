@@ -2,14 +2,14 @@ function nSchedule = Algorithm_1_HLFET(SDFgraph)
 for nProcessors = 1:1000
     numIter = 15*nProcessors;
     [nSchedule, ~] = Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter);
-    if(nSchedule.type ~= "unset")
+    if(~strcmp(nSchedule.type, 'unset'))
         break;
     end
 end
 end
 
 function [nSchedule, maxBuff]= Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter)
-    nSchedule.type = "unset";
+    nSchedule.type = 'unset';
     maxBuff        = 10^6;
     for iter = 1:numIter
         Schedule   = Algorithm_1_HLFET_impl(SDFgraph, nProcessors);
