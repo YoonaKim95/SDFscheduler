@@ -45,7 +45,7 @@ for idx  = 1:nActor
     else
         actor       = theStruct.sdf3.applicationGraph.sdfProperties.actorProperties{idx};
     end
-    if (strcmp(mActor.name, actor.Attributes.actor))
+    if (~strcmp(mActor.name, actor.Attributes.actor))
         error('actor name is different!');
     end
     mActor.execTime = str2double(actor.processor.executionTime.Attributes.time);
