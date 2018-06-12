@@ -1,18 +1,24 @@
 function nSchedule = Algorithm_1_HLFET(SDFgraph)
+%number of buffer
+matrix_buffers = gen_init_buffers(SDFgraph);
+
+%occurence of each actor
+actor_occ   = cal_occurrence_of_actors(SDFgraph);
+
 for nProcessors = 1:1000
-    numIter = 15*nProcessors;
-    [nSchedule, ~] = Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter);
+    numIter = floor(30*sqrt(nProcessors));
+    [nSchedule, ~] = Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ);
     if(~strcmp(nSchedule.type, 'unset'))
         break;
     end
 end
 end
 
-function [nSchedule, maxBuff]= Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter)
+function [nSchedule, maxBuff]= Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ)
     nSchedule.type = 'unset';
     maxBuff        = 10^6;
     for iter = 1:numIter
-        Schedule   = Algorithm_1_HLFET_impl(SDFgraph, nProcessors);
+        Schedule   = Algorithm_1_HLFET_impl(SDFgraph, nProcessors, matrix_buffers, actor_occ);
         [Schedule, constraint_OK, nProc, nBuff]   = Schedule_evaluate(SDFgraph, Schedule, 0);
         if (constraint_OK==1 && nProc==nProcessors && nBuff < maxBuff)
             maxBuff = nBuff;
@@ -21,18 +27,12 @@ function [nSchedule, maxBuff]= Algorithm_1_HLFET_multi(SDFgraph, nProcessors, nu
     end
 end
 
-function nSchedule = Algorithm_1_HLFET_impl(SDFgraph, nProcessors)
+function nSchedule = Algorithm_1_HLFET_impl(SDFgraph, nProcessors, matrix_buffers, actor_occ)
     nSchedule.type = 'PaSTA';
     nSchedule.xmlns = 'http://peace.snu.ac.kr/CICXMLSchema';
     nSchedule.taskGroup.name = 'task';
     nSchedule.taskGroup.buffer = 0;
     scheduleGroups = [];
-
-    %number of buffer
-    matrix_buffers = gen_init_buffers(SDFgraph);
-
-    %occurence of each actor
-    actor_occ   = cal_occurrence_of_actors(SDFgraph);
 
     %begin of the algorithm
     pool        = zeros(nProcessors, 1); %store next available time
@@ -131,7 +131,7 @@ function actor_occ = cal_occurrence_of_actors(SDFgraph)
                     s2 = lcm(SDFgraph.channels{idx,jdx}.rate_in, SDFgraph.channels{idx,jdx}.rate_out);
                     ss = lcm(s1,s2);
                     if(actor_occ(idx) ~= ss/SDFgraph.channels{idx,jdx}.rate_in)
-                        actor_occ(jdx) = ss/SDFgraph.channels{idx,jdx}.rate_in;
+                        actor_occ(idx) = ss/SDFgraph.channels{idx,jdx}.rate_in;
                         unconverged    = 1;
                     end
                     if(actor_occ(jdx) ~= ss/SDFgraph.channels{idx,jdx}.rate_out)
@@ -141,7 +141,7 @@ function actor_occ = cal_occurrence_of_actors(SDFgraph)
                 end
             end
        end
-    end %end while
+    end
 end
 
 function procs = available_procs(pool, time)

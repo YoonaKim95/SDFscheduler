@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf3 type="sdf" version="1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://www.es.ele.tue.nl/sdf3/xsd/sdf3-sdf.xsd">
+  <applicationGraph name="toy">
+    <sdf name="toy" type="toy">
+      <actor name="C" type="C">
+        <port name="p_out1" type="out" rate="2"/>
+        <port name="p_out2" type="out" rate="1"/>
+      </actor>
+      <actor name="D" type="D">
+        <port name="p_in" type="in" rate="3"/>
+        <port name="p_out" type="out" rate="3"/>
+      </actor>
+      <actor name="E" type="E">
+        <port name="p_in" type="in" rate="1"/>
+        <port name="p_out" type="out" rate="2"/>
+      </actor>
+      <actor name="F" type="F">
+        <port name="p_in1" type="in" rate="1"/>
+        <port name="p_in2" type="in" rate="1"/>
+      </actor>
+      <channel name="cd" srcActor="C" srcPort="p_out1" dstActor="D" dstPort="p_in"/>
+      <channel name="ce" srcActor="C" srcPort="p_out2" dstActor="E" dstPort="p_in"/>
+      <channel name="df" srcActor="D" srcPort="p_out" dstActor="F" dstPort="p_in1"/>
+      <channel name="ef" srcActor="E" srcPort="p_out" dstActor="F" dstPort="p_in2"/>
+    </sdf>
+    <sdfProperties>
+      <actorProperties actor="C">
+        <processor type="p1" default="true">
+          <executionTime time="15"/>
+        </processor>
+      </actorProperties>
+      <actorProperties actor="D">
+        <processor type="p1" default="true">
+          <executionTime time="20"/>
+        </processor>
+      </actorProperties>
+      <actorProperties actor="E">
+        <processor type="p1" default="true">
+          <executionTime time="20"/>
+        </processor>
+      </actorProperties>
+      <actorProperties actor="F">
+        <processor type="p1" default="true">
+          <executionTime time="10"/>
+        </processor>
+      </actorProperties>
+      <graphProperties>
+        <timeConstraints>
+                 <invthroughput>150</invthroughput>
+        </timeConstraints>
+      </graphProperties>
+    </sdfProperties>
+  </applicationGraph>
+</sdf3>

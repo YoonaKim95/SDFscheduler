@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CIC_Schedule type="PaSTA" xmlns="http://peace.snu.ac.kr/CICXMLSchema">
+    <taskGroups>
+        <taskGroup name="task" buffer="31">
+            <scheduleGroup scheduleType="static" poolName="p1" name="sg0" localId="0">
+                <scheduleElement>
+                    <task startTime="0" repetition="1" name="a0" endTime="46"/>
+                </scheduleElement>
+                <scheduleElement>
+                    <task startTime="46" repetition="1" name="a2" endTime="107"/>
+                </scheduleElement>
+                <scheduleElement>
+                    <task startTime="107" repetition="1" name="a3" endTime="155"/>
+                </scheduleElement>
+                <scheduleElement>
+                    <task startTime="155" repetition="1" name="a5" endTime="196"/>
+                </scheduleElement>
+                <scheduleElement>
+                    <task startTime="196" repetition="2" name="a6" endTime="237"/>
+                </scheduleElement>
+            </scheduleGroup>
+            <scheduleGroup scheduleType="static" poolName="p1" name="sg1" localId="1">
+                <scheduleElement>
+                    <task startTime="46" repetition="1" name="a1" endTime="128"/>
+                </scheduleElement>
+                <scheduleElement>
+                    <task startTime="128" repetition="1" name="a7" endTime="138"/>
+                </scheduleElement>
+                <scheduleElement>
+                    <task startTime="138" repetition="1" name="a1" endTime="220"/>
+                </scheduleElement>
+                <scheduleElement>
+                    <task startTime="220" repetition="1" name="a7" endTime="230"/>
+                </scheduleElement>
+                <scheduleElement>
+                    <task startTime="231" repetition="1" name="a8" endTime="274"/>
+                </scheduleElement>
+            </scheduleGroup>   
+            <scheduleGroup scheduleType="static" poolName="p1" name="sg2" localId="0">
+                <scheduleElement>
+                    <task startTime="155" repetition="1" name="a4" endTime="231"/>
+                </scheduleElement>
+                <scheduleElement>
+                    <task startTime="231" repetition="2" name="a9" endTime="365"/>
+                </scheduleElement>
+            </scheduleGroup>         
+        </taskGroup>
+    </taskGroups>
+</CIC_Schedule>
+
