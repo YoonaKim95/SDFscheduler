@@ -24,6 +24,7 @@ function [nSchedule, maxBuff]= Algorithm_1_HLFET_multi(SDFgraph, nProcessors, nu
         if (constraint_OK==1 && nProc==nProcessors)
             nValid = nValid + 1;
             if( nBuff < maxBuff)
+                disp(['update ' num2str(nBuff)]);
                 maxBuff = nBuff;
                 nSchedule = Schedule;
             end

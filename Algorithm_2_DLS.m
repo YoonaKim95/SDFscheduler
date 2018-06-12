@@ -24,6 +24,7 @@ function [nSchedule, maxBuff]= Algorithm_2_DLS_multi(SDFgraph, nProcessors, numI
         if (constraint_OK==1 && nProc==nProcessors)
             nValid = nValid + 1;
             if( nBuff < maxBuff)
+                disp(['update ' num2str(nBuff)]);
                 maxBuff = nBuff;
                 nSchedule = Schedule;
             end
@@ -56,12 +57,18 @@ function nSchedule = Algorithm_2_DLS_impl(SDFgraph, nProcessors, matrix_buffers,
             runable_actor = shuffle(runable_actors(SDFgraph, matrix_buffers, actor_occ));
             avail_procs   = procs_priority(p_start, pool, shuffle(available_procs(pool, event.time)));
             for idx=1:length(avail_procs)
-                if(idx <= length(runable_actor))
+                if(1 <= length(runable_actor))
                     %add to scheduleGroups, change pool available time, change
                     %matrix_buffers, add new event to event pool, reduce actor
                     %occurence
                     rproc      = avail_procs(idx);
-                    ractor_idx = runable_actor(idx);
+                    runable_actor = actors_priority(shuffle(runable_actor), SDFgraph, matrix_buffers, max_buffers);
+                    ractor_idx = runable_actor(1);
+                    if (length(runable_actor) == 1)
+                        runable_actor = [];
+                    else
+                        runable_actor = runable_actor(2:end);
+                    end
                     mActor = SDFgraph.actors(ractor_idx);
                     scheduleGroups = add_task_to_schedule(scheduleGroups, rproc, mActor, event.time);
                     pool(rproc) = event.time + mActor.execTime;
@@ -102,10 +109,29 @@ function nSchedule = Algorithm_2_DLS_impl(SDFgraph, nProcessors, matrix_buffers,
     nSchedule.taskGroup.scheduleGroups = scheduleGroups;
 end
 
-function result = procs_priority(p_start, pool, actors)
-    criteria = pool(actors) - p_start(actors);
+function result = procs_priority(p_start, pool, procs)
+    criteria = pool(procs) - p_start(procs);
     [~,I]    = sort(criteria);
-    result   = actors(I);
+    result   = procs(I);
+end
+
+function result = actors_priority(runable_actor, SDFgraph, matrix_buffers, max_buffers)
+    criteria = zeros(size(runable_actor));
+    for idx=1:length(runable_actor)
+        ractor_idx = runable_actor(idx);
+        for rdx = 1:size(SDFgraph.channels,2)
+            if(~isempty(SDFgraph.channels{ractor_idx, rdx}))
+               matrix_buffers(ractor_idx, rdx) = matrix_buffers(ractor_idx, rdx) + SDFgraph.channels{ractor_idx, rdx}.rate_in;
+               if (matrix_buffers(ractor_idx, rdx) > max_buffers(ractor_idx, rdx))
+                   criteria(idx) = criteria(idx) + matrix_buffers(ractor_idx, rdx) - max_buffers(ractor_idx, rdx);
+               else
+                   criteria(idx) = criteria(idx) - 1.0/double(max_buffers(ractor_idx, rdx)-matrix_buffers(ractor_idx, rdx));
+               end
+            end
+        end
+    end
+    [~,I]    = sort(criteria);
+    result   = runable_actor(I);
 end
 
 function matrix_buffers = gen_init_buffers(SDFgraph)
