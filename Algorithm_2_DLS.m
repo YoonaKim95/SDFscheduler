@@ -1,4 +1,4 @@
-function nSchedule = Algorithm_1_HLFET(SDFgraph)
+function nSchedule = Algorithm_2_DLS(SDFgraph)
 %number of buffer
 matrix_buffers = gen_init_buffers(SDFgraph);
 
@@ -7,19 +7,19 @@ actor_occ   = cal_occurrence_of_actors(SDFgraph);
 
 for nProcessors = 1:1000
     numIter = floor(30*sqrt(nProcessors));
-    [nSchedule, ~] = Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ);
+    [nSchedule, ~] = Algorithm_2_DLS_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ);
     if(~strcmp(nSchedule.type, 'unset'))
         break;
     end
 end
 end
 
-function [nSchedule, maxBuff]= Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ)
+function [nSchedule, maxBuff]= Algorithm_2_DLS_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ)
     nSchedule.type = 'unset';
     maxBuff        = 10^6;
     nValid         = 0;
     for iter = 1:numIter
-        Schedule   = Algorithm_1_HLFET_impl(SDFgraph, nProcessors, matrix_buffers, actor_occ);
+        Schedule   = Algorithm_2_DLS_impl(SDFgraph, nProcessors, matrix_buffers, actor_occ);
         [Schedule, constraint_OK, nProc, nBuff]   = Schedule_evaluate(SDFgraph, Schedule, 0);
         if (constraint_OK==1 && nProc==nProcessors)
             nValid = nValid + 1;
@@ -32,7 +32,7 @@ function [nSchedule, maxBuff]= Algorithm_1_HLFET_multi(SDFgraph, nProcessors, nu
     disp(['num. of processors: ' num2str(nProcessors) '. Valid rate: ' num2str(double(nValid)/double(numIter))]);
 end
 
-function nSchedule = Algorithm_1_HLFET_impl(SDFgraph, nProcessors, matrix_buffers, actor_occ)
+function nSchedule = Algorithm_2_DLS_impl(SDFgraph, nProcessors, matrix_buffers, actor_occ)
     nSchedule.type = 'PaSTA';
     nSchedule.xmlns = 'http://peace.snu.ac.kr/CICXMLSchema';
     nSchedule.taskGroup.name = 'task';
@@ -40,6 +40,8 @@ function nSchedule = Algorithm_1_HLFET_impl(SDFgraph, nProcessors, matrix_buffer
     scheduleGroups = [];
 
     %begin of the algorithm
+    max_buffers = matrix_buffers;
+    p_start     = -1* ones(nProcessors, 1); %store next starting time
     pool        = zeros(nProcessors, 1); %store next available time
     events      = table;
     nevent.type = "start";
@@ -52,7 +54,7 @@ function nSchedule = Algorithm_1_HLFET_impl(SDFgraph, nProcessors, matrix_buffer
         event   = events(1,:);
         if(event.type == "start")
             runable_actor = shuffle(runable_actors(SDFgraph, matrix_buffers, actor_occ));
-            avail_procs   = shuffle(available_procs(pool, event.time));
+            avail_procs   = procs_priority(p_start, pool, shuffle(available_procs(pool, event.time)));
             for idx=1:length(avail_procs)
                 if(idx <= length(runable_actor))
                     %add to scheduleGroups, change pool available time, change
@@ -63,6 +65,9 @@ function nSchedule = Algorithm_1_HLFET_impl(SDFgraph, nProcessors, matrix_buffer
                     mActor = SDFgraph.actors(ractor_idx);
                     scheduleGroups = add_task_to_schedule(scheduleGroups, rproc, mActor, event.time);
                     pool(rproc) = event.time + mActor.execTime;
+                    if(p_start(rproc) == -1)
+                        p_start(rproc) =  event.time;
+                    end
                     actor_occ(ractor_idx) = actor_occ(ractor_idx) - 1;
                     for jdx = 1:size(SDFgraph.channels,1)
                        if(~isempty(SDFgraph.channels{jdx, ractor_idx}))
@@ -81,6 +86,9 @@ function nSchedule = Algorithm_1_HLFET_impl(SDFgraph, nProcessors, matrix_buffer
             for rdx = 1:size(SDFgraph.channels,2)
                 if(~isempty(SDFgraph.channels{ractor_idx, rdx}))
                    matrix_buffers(ractor_idx, rdx) = matrix_buffers(ractor_idx, rdx) + SDFgraph.channels{ractor_idx, rdx}.rate_in;
+                   if (matrix_buffers(ractor_idx, rdx) > max_buffers(ractor_idx, rdx))
+                       max_buffers(ractor_idx, rdx) = matrix_buffers(ractor_idx, rdx);
+                   end
                 end
             end
             nevent.type = "start";
@@ -92,6 +100,12 @@ function nSchedule = Algorithm_1_HLFET_impl(SDFgraph, nProcessors, matrix_buffer
     end
 
     nSchedule.taskGroup.scheduleGroups = scheduleGroups;
+end
+
+function result = procs_priority(p_start, pool, actors)
+    criteria = pool(actors) - p_start(actors);
+    [~,I]    = sort(criteria);
+    result   = actors(I);
 end
 
 function matrix_buffers = gen_init_buffers(SDFgraph)
