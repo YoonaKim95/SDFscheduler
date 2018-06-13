@@ -1,4 +1,7 @@
-function nSchedule = Algorithm_1_HLFET(SDFgraph)
+function nSchedule = Algorithm_1_HLFET(SDFgraph, verbose)
+if nargin < 2
+  verbose = 1;
+end
 %number of buffer
 matrix_buffers = gen_init_buffers(SDFgraph);
 
@@ -7,14 +10,14 @@ actor_occ   = cal_occurrence_of_actors(SDFgraph);
 
 for nProcessors = 1:1000
     numIter = floor(30*sqrt(nProcessors));
-    [nSchedule, ~] = Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ);
+    [nSchedule, ~] = Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ, verbose);
     if(~strcmp(nSchedule.type, 'unset'))
         break;
     end
 end
 end
 
-function [nSchedule, maxBuff]= Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ)
+function [nSchedule, maxBuff]= Algorithm_1_HLFET_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ, verbose)
     nSchedule.type = 'unset';
     maxBuff        = 10^6;
     nValid         = 0;
@@ -24,13 +27,13 @@ function [nSchedule, maxBuff]= Algorithm_1_HLFET_multi(SDFgraph, nProcessors, nu
         if (constraint_OK==1 && nProc==nProcessors)
             nValid = nValid + 1;
             if( nBuff < maxBuff)
-                disp(['update ' num2str(nBuff)]);
+                disp_verbose(verbose,['update ' num2str(nBuff)]);
                 maxBuff = nBuff;
                 nSchedule = Schedule;
             end
         end
     end
-    disp(['num. of processors: ' num2str(nProcessors) '. Valid rate: ' num2str(double(nValid)/double(numIter))]);
+    disp_verbose(verbose,['num. of processors: ' num2str(nProcessors) '. Valid rate: ' num2str(double(nValid)/double(numIter))]);
 end
 
 function nSchedule = Algorithm_1_HLFET_impl(SDFgraph, nProcessors, matrix_buffers, actor_occ)

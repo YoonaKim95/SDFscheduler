@@ -26,7 +26,7 @@ for idx = 1:nProcessors
             event.type  = "finish";
             events = [events; struct2table(event)];
         end
-        %assert(task.endTime == event.time, 'event time mismatched.');
+        assert(task.endTime == event.time, 'event time mismatched.');
     end
 end
 events = sortrows(events,'type');
@@ -87,7 +87,7 @@ for idx = 1:nevents
         for jdx = 1:size(SDFgraph.channels,1)
            if(~isempty(SDFgraph.channels{jdx, ractor_idx}))
                matrix_buffers(jdx, ractor_idx) = matrix_buffers(jdx, ractor_idx) - SDFgraph.channels{jdx, ractor_idx}.rate_out;
-               %assert(matrix_buffers(jdx, ractor_idx) >= 0, 'schedule not satisfied input/output constrain.');
+               assert(matrix_buffers(jdx, ractor_idx) >= 0, 'schedule not satisfied input/output constrain.');
            end
         end
     else

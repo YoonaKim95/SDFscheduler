@@ -1,4 +1,7 @@
-function nSchedule = Algorithm_2_DLS(SDFgraph)
+function nSchedule = Algorithm_2_DLS(SDFgraph, verbose)
+if nargin < 2
+  verbose = 1;
+end
 %number of buffer
 matrix_buffers = gen_init_buffers(SDFgraph);
 
@@ -7,14 +10,14 @@ actor_occ   = cal_occurrence_of_actors(SDFgraph);
 
 for nProcessors = 1:1000
     numIter = floor(30*sqrt(nProcessors));
-    [nSchedule, ~] = Algorithm_2_DLS_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ);
+    [nSchedule, ~] = Algorithm_2_DLS_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ, verbose);
     if(~strcmp(nSchedule.type, 'unset'))
         break;
     end
 end
 end
 
-function [nSchedule, maxBuff]= Algorithm_2_DLS_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ)
+function [nSchedule, maxBuff]= Algorithm_2_DLS_multi(SDFgraph, nProcessors, numIter, matrix_buffers, actor_occ, verbose)
     nSchedule.type = 'unset';
     maxBuff        = 10^6;
     nValid         = 0;
@@ -24,13 +27,13 @@ function [nSchedule, maxBuff]= Algorithm_2_DLS_multi(SDFgraph, nProcessors, numI
         if (constraint_OK==1 && nProc==nProcessors)
             nValid = nValid + 1;
             if( nBuff < maxBuff)
-                disp(['update ' num2str(nBuff)]);
+                disp_verbose(verbose,['update ' num2str(nBuff)]);
                 maxBuff = nBuff;
                 nSchedule = Schedule;
             end
         end
     end
-    disp(['num. of processors: ' num2str(nProcessors) '. Valid rate: ' num2str(double(nValid)/double(numIter))]);
+    disp_verbose(verbose,['num. of processors: ' num2str(nProcessors) '. Valid rate: ' num2str(double(nValid)/double(numIter))]);
 end
 
 function nSchedule = Algorithm_2_DLS_impl(SDFgraph, nProcessors, matrix_buffers, actor_occ)
@@ -54,21 +57,19 @@ function nSchedule = Algorithm_2_DLS_impl(SDFgraph, nProcessors, matrix_buffers,
         events = sortrows(events,'time');
         event   = events(1,:);
         if(event.type == "start")
-            runable_actor = shuffle(runable_actors(SDFgraph, matrix_buffers, actor_occ));
+            runable_actor = runable_actors(SDFgraph, matrix_buffers, actor_occ);
             avail_procs   = procs_priority(p_start, pool, shuffle(available_procs(pool, event.time)));
             for idx=1:length(avail_procs)
-                if(1 <= length(runable_actor))
+                n_actors = length(runable_actor);
+                if(1 <= n_actors)
                     %add to scheduleGroups, change pool available time, change
                     %matrix_buffers, add new event to event pool, reduce actor
                     %occurence
                     rproc      = avail_procs(idx);
                     runable_actor = actors_priority(shuffle(runable_actor), SDFgraph, matrix_buffers, max_buffers);
-                    ractor_idx = runable_actor(1);
-                    if (length(runable_actor) == 1)
-                        runable_actor = [];
-                    else
-                        runable_actor = runable_actor(2:end);
-                    end
+                    ractor_idxs = shuffle([runable_actor(1) runable_actor(randi(n_actors)) runable_actor(randi(n_actors))]);
+                    ractor_idx = ractor_idxs(1);
+                    runable_actor = runable_actor(find(runable_actor~=ractor_idx));
                     mActor = SDFgraph.actors(ractor_idx);
                     scheduleGroups = add_task_to_schedule(scheduleGroups, rproc, mActor, event.time);
                     pool(rproc) = event.time + mActor.execTime;
