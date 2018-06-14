@@ -2,9 +2,9 @@
 
 Input: an SDF graph with the execution time information of actors and a given target architecture   
 Output: a parallel schedule of the SDF graph  
-Objective:
-- Minimize the resource requirement under a given throughput constraint: 
-  number of processing elements first, buffer size next.
+Objective: Minimize the resource requirement under a given throughput constraint 
+- number of processing elements first
+- buffer size next.
 
 ## How to run
 The main function is  
