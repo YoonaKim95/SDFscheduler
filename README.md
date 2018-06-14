@@ -1,11 +1,20 @@
-Design a scheduling algorithm, please refer to the attached zip file. The zip file includes
+#Mapping and Scheduling Challenge
 
-(1) input topology xml file. It contains the execution time information of nodes and the throughput constraint.
+Input: an SDF graph with the execution time information of actors and a given target architecture 
+Output: a parallel schedule of the SDF graph
+Objective:
+- Minimize the resource requirement under a given throughput constraint: 
+	number of processing elements first, buffer size next.
 
-(2) The scheduling objective is to minimize the resources (number of processors and buffers) while satisfying the throughput constraint.
+#How to run
+The main function is 
+	Mapping_Schedule_Challenge(inputfile, outputfolder)
 
-(3) XXX_schedule.xml is the scheduling output result. You may generate another form of output if it shows the scheduline information fully.
+There are two parameter:
+- inputfile: the input SDF graph
+- outputfolder: which folder the output schedule should be saved.
+	if empty. it will be save in the main folder.
 
-There are two zip files. The first one contains two acyclic SDF graph, and the second one contains one cyclic SDF graph (complex one). 
-
-Since the scheduling result is obtained from a meta-heuristic algorithm, your heuristic may give worse results that the provided one. That is O.K. Competition will be made among the teams that are involved in the competition.
+Example:
+Mapping_Schedule_Challenge('Example_ETL\toy1.xml')
+Mapping_Schedule_Challenge('Example_ETL\toy1.xml', 'output')
